@@ -14,6 +14,8 @@ use opencv::{
 };
 
 fn main() -> Result<()> {
+    // faceDetection()?;
+    // return Ok(());
     let mut patternImg = match imgcodecs::imread("./assets/patterns/p1.png", imgcodecs::IMREAD_COLOR) {
         Ok(img) => {
             println!("[main] file read successfully:\n\t{:?}", img.size());
@@ -45,7 +47,7 @@ fn main() -> Result<()> {
                 //         0,
                 //     )?;
                 // }
-                // orbMatch(&mut patternImg, &mut dstImg, 0.7)?;
+                orbMatch(&mut patternImg, &mut dstImg, 0.7)?;
 
                 highgui::named_window("img", highgui::WINDOW_AUTOSIZE)?;
                 // highgui::imshow("img", &patternImg)?;
@@ -71,101 +73,103 @@ fn main() -> Result<()> {
 }
 
 
-// fn orbMatch(patternImg: &mut Mat, dstImg: &mut Mat, matchRatio: f32) -> Result<()>{
-//     match <dyn features2d::ORB>::create(
-//         500,
-//         1.2,
-//         8,
-//         31,
-//         0,
-//         2,
-//         features2d::ORB_ScoreType::HARRIS_SCORE,
-//         31,
-//         20,        
-//     ) {
-//         Ok(mut orb) => {
-//             let mut keypointsPattern = core::Vector::default();
-//             let mut keypointsDstImg = core::Vector::default();
-//             let mut descPattern = core::Mat::default();
-//             let mut descDstImg = core::Mat::default();
+fn orbMatch(patternImg: &mut Mat, dstImg: &mut Mat, matchRatio: f32) -> Result<()>{
+    let orb = opencv::features2d::ORB::create(
+        500,
+        1.2,
+        8,
+        31,
+        0,
+        2,
+        features2d::ORB_ScoreType::HARRIS_SCORE,
+        31,
+        20,        
+        // nfeatures, scale_factor, nlevels, edge_threshold, first_level, wta_k, score_type, patch_size, fast_threshold
+    );
+    match orb {
+        Ok(mut orb) => {
+            let mut keypointsPattern = core::Vector::default();
+            let mut keypointsDstImg = core::Vector::default();
+            let mut descPattern = core::Mat::default();
+            let mut descDstImg = core::Mat::default();
         
-//             match orb.detect_and_compute(patternImg, &core::no_array(), &mut keypointsPattern, &mut descPattern, false) {
-//                 Ok(_) => {},
-//                 Err(err) => {
-//                     println!("[orbMatch] detect_and_compute error:\n\t{:?}", err);
-//                 },
-//             };
-//             match orb.detect_and_compute(dstImg, &core::no_array(), &mut keypointsDstImg, &mut descDstImg, false) {
-//                 Ok(_) => {},
-//                 Err(err) => {
-//                     println!("[orbMatch] detect_and_compute error:\n\t{:?}", err);
-//                 },
-//             };
-//             let mut bfMatches: core::Vector<core::Vector<core::DMatch>> = core::Vector::default();    // core::Vector<core::Vector<core::DMatch>>
-//             match <dyn features2d::DescriptorMatcher>::create("FlannBased") {
-//                 Ok(mut bf) => {
-//                     let masks = core::Mat::default();
-//                     bf.knn_match(&descPattern, &mut bfMatches, 2, &core::no_array(), false)?;
-//                     bf
-//                 },
-//                 Err(err) => panic!("[orbMatch] BFMatcher create error: {:?}", err),
-//             };
-//             let mut goodMatches = core::Vector::default();
-//             for mm in bfMatches {
-//                 let m0 = mm.get(0)?;
-//                 let m1 = mm.get(1)?;
-//                 if m0.distance < matchRatio * m1.distance {
-//                     goodMatches.push(m0);
-//                 }
-//             }
-//             println!("[orbMatch] matches: {:?}", goodMatches);
-//             features2d::draw_matches(
-//                 patternImg, 
-//                 &keypointsPattern, 
-//                 dstImg, 
-//                 &keypointsDstImg, 
-//                 &goodMatches, 
-//                 dstImg, 
-//                 core::Scalar::new(0f64, 255f64, 0f64, 0f64), 
-//                 core::Scalar::new(0f64, 255f64, 0f64, 0f64), 
-//                 &core::Vector::default(), 
-//                 features2d::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS,
-//             );
-//             // features2d::draw_keypoints(
-//             //     imgPattern,
-//             //     &keypoints,
-//             //     dstImg,
-//             //     core::VecN([0., 255., 0., 255.]),
-//             //     features2d::DrawMatchesFlags::DEFAULT,
-//             // )?;
-//             // imgproc::rectangle(
-//             //     dstImg,
-//             //     core::Rect::from_points(core::Point::new(0, 0), core::Point::new(50, 50)),
-//             //     core::VecN([255., 0., 0., 0.]),
-//             //     -1,
-//             //     imgproc::LINE_8,
-//             //     0,
-//             // )?;
-//             // // Use SIFT
-//             // let mut sift = features2d::SIFT::create(0, 3, 0.04, 10., 1.6)?;
-//             // let mut sift_keypoints = core::Vector::default();
-//             // let mut sift_desc = core::Mat::default();
-//             // sift.detect_and_compute(imgPattern, &mask, &mut sift_keypoints, &mut sift_desc, false)?;
-//             // features2d::draw_keypoints(
-//             //     &dstImg.clone(),
-//             //     &sift_keypoints,
-//             //     dstImg,
-//             //     core::VecN([0., 0., 255., 255.]),
-//             //     features2d::DrawMatchesFlags::DEFAULT,
-//             // )?;
+            match orb.detect_and_compute(patternImg, &core::no_array(), &mut keypointsPattern, &mut descPattern, false) {
+                Ok(_) => {},
+                Err(err) => {
+                    println!("[orbMatch] detect_and_compute error:\n\t{:?}", err);
+                },
+            };
+            match orb.detect_and_compute(dstImg, &core::no_array(), &mut keypointsDstImg, &mut descDstImg, false) {
+                Ok(_) => {},
+                Err(err) => {
+                    println!("[orbMatch] detect_and_compute error:\n\t{:?}", err);
+                },
+            };
+            let mut bfMatches: core::Vector<core::Vector<core::DMatch>> = core::Vector::default();    // core::Vector<core::Vector<core::DMatch>>
+            match opencv::features2d::DescriptorMatcher::create("FlannBased") {
+                Ok(mut bf) => {
+                    let masks = core::Mat::default();
+                    bf.knn_match(&descPattern, &mut bfMatches, 2, &core::no_array(), false)?;
+                    bf
+                },
+                Err(err) => panic!("[orbMatch] BFMatcher create error: {:?}", err),
+            };
+            let mut goodMatches = core::Vector::default();
+            for mm in bfMatches {
+                let m0 = mm.get(0)?;
+                let m1 = mm.get(1)?;
+                if m0.distance < matchRatio * m1.distance {
+                    goodMatches.push(m0);
+                }
+            }
+            println!("[orbMatch] matches: {:?}", goodMatches);
+            opencv::features2d::draw_matches(
+                patternImg, 
+                &keypointsPattern, 
+                &dstImg.clone(),
+                &keypointsDstImg, 
+                &goodMatches, 
+                dstImg, 
+                core::Scalar::new(0f64, 255f64, 0f64, 0f64), 
+                core::Scalar::new(0f64, 255f64, 0f64, 0f64), 
+                &core::Vector::default(), 
+                features2d::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS,
+            ).unwrap();
+            // features2d::draw_keypoints(
+            //     imgPattern,
+            //     &keypoints,
+            //     dstImg,
+            //     core::VecN([0., 255., 0., 255.]),
+            //     features2d::DrawMatchesFlags::DEFAULT,
+            // )?;
+            // imgproc::rectangle(
+            //     dstImg,
+            //     core::Rect::from_points(core::Point::new(0, 0), core::Point::new(50, 50)),
+            //     core::VecN([255., 0., 0., 0.]),
+            //     -1,
+            //     imgproc::LINE_8,
+            //     0,
+            // )?;
+            // // Use SIFT
+            // let mut sift = features2d::SIFT::create(0, 3, 0.04, 10., 1.6)?;
+            // let mut sift_keypoints = core::Vector::default();
+            // let mut sift_desc = core::Mat::default();
+            // sift.detect_and_compute(imgPattern, &mask, &mut sift_keypoints, &mut sift_desc, false)?;
+            // features2d::draw_keypoints(
+            //     &dstImg.clone(),
+            //     &sift_keypoints,
+            //     dstImg,
+            //     core::VecN([0., 0., 255., 255.]),
+            //     features2d::DrawMatchesFlags::DEFAULT,
+            // )?;
 
-//         },
-//         Err(err) => {
-//             println!("[orbMatch] creating ORB error:\n\t{:?}", err);
-//         },
-//     };
-//     Ok(())
-// }
+        },
+        Err(err) => {
+            println!("[orbMatch] creating ORB error:\n\t{:?}", err);
+        },
+    };
+    Ok(())
+}
 
 
 fn faceDetection() -> Result<()> {
@@ -180,7 +184,7 @@ fn faceDetection() -> Result<()> {
                 cam.read(&mut img)?;
                 let mut gray = Mat::default();
                 imgproc::cvt_color(&img, &mut gray, imgproc::COLOR_BGR2GRAY, 0)?;
-                let mut faces = types::VectorOfRect::new();
+                let mut faces = opencv::core::Vector::<opencv::core::Rect>::new();
                 faceDetector.detect_multi_scale(
                     &gray, 
                     &mut faces, 
