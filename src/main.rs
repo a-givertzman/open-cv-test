@@ -16,9 +16,17 @@ use opencv::{
 fn main() -> Result<()> {
     // faceDetection()?;
     // return Ok(());
-    let mut patternImg = match imgcodecs::imread("./assets/patterns/p1.png", imgcodecs::IMREAD_COLOR) {
+    highgui::named_window("Pattern", highgui::WINDOW_AUTOSIZE)?;
+    highgui::named_window("Frame", highgui::WINDOW_AUTOSIZE)?;
+    let mut patternImg = match imgcodecs::imread(
+        // "./assets/patterns/pattern1.png",
+        "assets/input/Screenshot from 2025-03-25 18-33-16.png",
+        imgcodecs::IMREAD_COLOR
+    ) {
         Ok(img) => {
             println!("[main] file read successfully:\n\t{:?}", img.size());
+            highgui::imshow("Pattern", &img)?;
+            highgui::wait_key(1).unwrap();
             img
         },
         Err(err) => {
@@ -32,6 +40,8 @@ fn main() -> Result<()> {
             loop {
                 cam.read(&mut frame)?;
                 let mut dstImg = core::Mat::default();
+                dstImg.clone_from(&frame);
+                // let mut dstImg = core::Mat::default();
                 // imgproc::cvt_color(&img, &mut gray, imgproc::COLOR_BGR2GRAY, 0)?;
                 // let mut faces = types::VectorOfRect::new();
                 // if faces.len() > 0 {
@@ -47,12 +57,17 @@ fn main() -> Result<()> {
                 //         0,
                 //     )?;
                 // }
-                orbMatch(&mut patternImg, &mut dstImg, 0.7)?;
+                let mut dstImg = imgcodecs::imread(
+                    // "./assets/patterns/pattern1.png",
+                    "assets/input/Screenshot from 2025-03-25 18-33-16.png",
+                    imgcodecs::IMREAD_COLOR
+                ).unwrap();
+                orbMatch(&mut patternImg, &mut dstImg, 0.5)?;
 
-                highgui::named_window("img", highgui::WINDOW_AUTOSIZE)?;
                 // highgui::imshow("img", &patternImg)?;
                 // highgui::imshow("dst img", &dstImg)?;
-                highgui::imshow("frame", &frame)?;
+                highgui::imshow("Match", &dstImg)?;
+                // highgui::imshow("Frame", &frame)?;
                 match highgui::wait_key(1) {
                     Ok(key) => {
                         if key == 'q' as i32 {
@@ -81,7 +96,7 @@ fn orbMatch(patternImg: &mut Mat, dstImg: &mut Mat, matchRatio: f32) -> Result<(
         31,
         0,
         2,
-        features2d::ORB_ScoreType::HARRIS_SCORE,
+        features2d::ORB_ScoreType::FAST_SCORE, //HARRIS_SCORE,
         31,
         20,        
         // nfeatures, scale_factor, nlevels, edge_threshold, first_level, wta_k, score_type, patch_size, fast_threshold
@@ -92,19 +107,12 @@ fn orbMatch(patternImg: &mut Mat, dstImg: &mut Mat, matchRatio: f32) -> Result<(
             let mut keypointsDstImg = core::Vector::default();
             let mut descPattern = core::Mat::default();
             let mut descDstImg = core::Mat::default();
-        
-            match orb.detect_and_compute(patternImg, &core::no_array(), &mut keypointsPattern, &mut descPattern, false) {
-                Ok(_) => {},
-                Err(err) => {
-                    println!("[orbMatch] detect_and_compute error:\n\t{:?}", err);
-                },
-            };
-            match orb.detect_and_compute(dstImg, &core::no_array(), &mut keypointsDstImg, &mut descDstImg, false) {
-                Ok(_) => {},
-                Err(err) => {
-                    println!("[orbMatch] detect_and_compute error:\n\t{:?}", err);
-                },
-            };
+            if let Err(err) = orb.detect_and_compute(patternImg, &core::no_array(), &mut keypointsPattern, &mut descPattern, false) {
+                println!("orbMatch | detect_and_compute error:\n\t{:?}", err);
+            }
+            if let Err(err) = orb.detect_and_compute(dstImg, &core::no_array(), &mut keypointsDstImg, &mut descDstImg, false) {
+                println!("orbMatch | detect_and_compute error:\n\t{:?}", err);
+            }
             let mut bfMatches: core::Vector<core::Vector<core::DMatch>> = core::Vector::default();    // core::Vector<core::Vector<core::DMatch>>
             match opencv::features2d::DescriptorMatcher::create("FlannBased") {
                 Ok(mut bf) => {
@@ -112,8 +120,9 @@ fn orbMatch(patternImg: &mut Mat, dstImg: &mut Mat, matchRatio: f32) -> Result<(
                     bf.knn_match(&descPattern, &mut bfMatches, 2, &core::no_array(), false)?;
                     bf
                 },
-                Err(err) => panic!("[orbMatch] BFMatcher create error: {:?}", err),
+                Err(err) => panic!("orbMatch | BFMatcher create error: {:?}", err),
             };
+            println!("orbMatch | matches: {:?}", bfMatches);
             let mut goodMatches = core::Vector::default();
             for mm in bfMatches {
                 let m0 = mm.get(0)?;
@@ -122,21 +131,25 @@ fn orbMatch(patternImg: &mut Mat, dstImg: &mut Mat, matchRatio: f32) -> Result<(
                     goodMatches.push(m0);
                 }
             }
-            println!("[orbMatch] matches: {:?}", goodMatches);
-            opencv::features2d::draw_matches(
+            println!("orbMatch | good matches: {:?}", goodMatches);
+            let mut out = core::Mat::default();
+            if let Err(err) = opencv::features2d::draw_matches(
                 patternImg, 
                 &keypointsPattern, 
-                &dstImg.clone(),
+                dstImg,
                 &keypointsDstImg, 
                 &goodMatches, 
-                dstImg, 
+                &mut out, 
                 core::Scalar::new(0f64, 255f64, 0f64, 0f64), 
                 core::Scalar::new(0f64, 255f64, 0f64, 0f64), 
                 &core::Vector::default(), 
                 features2d::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS,
-            ).unwrap();
+            ) {
+                println!("orbMatch | Error: {:?}", err);
+            }
+            dstImg.clone_from(&out);
             // features2d::draw_keypoints(
-            //     imgPattern,
+            //     patternImg,
             //     &keypoints,
             //     dstImg,
             //     core::VecN([0., 255., 0., 255.]),
@@ -165,7 +178,7 @@ fn orbMatch(patternImg: &mut Mat, dstImg: &mut Mat, matchRatio: f32) -> Result<(
 
         },
         Err(err) => {
-            println!("[orbMatch] creating ORB error:\n\t{:?}", err);
+            println!("orbMatch | creating ORB error:\n\t{:?}", err);
         },
     };
     Ok(())
