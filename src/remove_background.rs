@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, time::Instant};
 
 use frdm_tools::{conf::{Conf, DetectingContoursConf, FastScanConf, FineScanConf}, ContextRead, DetectingContoursCv, DetectingContoursCvCtx, Eval, Image, Initial, InitialCtx, Threshold};
 use opencv::{
@@ -86,8 +86,12 @@ impl RemoveBackground {
                             log::debug!("{dbg}.eval | file read successfully: {:?}", img.size());
                             highgui::imshow("Frame", &img)
                                 .map_err(|err| error.pass(err.to_string()))?;
+                            let time = Instant::now();
                             let gamma = self.auto_gamma(&img);
+                            println!("{dbg}.eval | Gamma elapsed: {:?}", time.elapsed());
+                            let time = Instant::now();
                             let brc = self.auto_brightness_and_contrast(&gamma, Some(3.0))?;
+                            println!("{dbg}.eval | Brightness and contrast elapsed: {:?}", time.elapsed());
                             let result = fgmask.eval(Image::new(brc.cols() as usize, brc.rows() as usize, brc.clone(), 0)).unwrap();
                             let result: &DetectingContoursCvCtx = result.read();
                             let result = &result.result.mat;
