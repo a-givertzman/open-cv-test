@@ -20,6 +20,11 @@ use sal_core::error::Error;
 /// You will get a black window during first few frames.
 /// 
 /// It would be better to apply morphological opening to the result to remove the noises. 
+/// 
+/// ### References:
+/// [Adaptive background mixture models for real-time tracking](http://www.ai.mit.edu/projects/vsam/Publications/stauffer_cvpr98_track.pdf)
+/// [OpenCV | Background Subtraction](https://docs.opencv.org/3.4/d8/d38/tutorial_bgsegm_bg_subtraction.html)
+/// 
 pub struct RemoveBackground {
 
 }
