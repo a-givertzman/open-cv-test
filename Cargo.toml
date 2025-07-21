@@ -17,6 +17,7 @@ debugging = { tag = "0.0.1", git = "https://github.com/a-givertzman/rust-debugin
 api-tools = { tag = "0.2.1", git = "https://github.com/a-givertzman/rust-api-tools.git" }
 # api-tools = { path = "../api-tools/" }
 sal-sync = { tag = "0.3.0", git = "https://github.com/a-givertzman/rust-sal-sync.git" }
+frdm-tools = { branch = "detecting_contours_cv_config", git = "https://github.com/a-givertzman/frdm-server.git" }
 #
 # OpenCV
 opencv = { version = "~0.95", features = ["clang-runtime"], git = "https://github.com/twistedfall/opencv-rust" }
